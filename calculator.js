@@ -11,7 +11,8 @@ const equalButton = document.querySelector(".equal");
 const clearButton = document.querySelector(".clear");
 const backspaceButton = document.querySelector(".backspace");
 const decimalButton = document.querySelector(".decimal");
-operatorCount = 0; // Servira plus tard lorsque je voudrais mettre plusieurs opérateurs 
+let decimalCount = 0; // Servira plus tard pour empeche l'utilisateur de mettre plusieurs virgules
+let secondDecimalCount = 0;
 
 function add(a, b) {
     return a + b;
@@ -26,7 +27,14 @@ function multiply(a, b) {
 }
 
 function divide(a, b) {
-    return a / b;
+    let div = a / b;
+
+    if (Number.isInteger(a / b) === false) {
+        return div.toFixed(3);
+    }
+    else {
+        return div;
+    }
 }
 
 function power(a, b) {
@@ -83,18 +91,22 @@ numberButtons.forEach(button => {
 
 operatorButtons.forEach(button => {
     button.addEventListener("click", () => {
-        operator += button.value;
-        updateDisplay(button.value, operator);
+        if (operator === "") {
+            operator += button.value;
+            updateDisplay(button.value, operator);
+        }
     });
 });
 
 decimalButton.addEventListener('click', () => {
-    if (operator === "") {
+    if (operator === "" && decimalCount === 0) {
         firstNumber += ".";
+        decimalCount += 1;
         updateDisplay(".", operator);
     }
-    else {
+    else if (operator !== "" && secondDecimalCount === 0) {
         secondNumber += ".";
+        secondDecimalCount += 1;
         updateDisplay(".", operator);
     }
 });
@@ -102,6 +114,10 @@ decimalButton.addEventListener('click', () => {
 backspaceButton.addEventListener('click', () => {
     if (secondNumber === "" && operator === "") {
         firstNumber = firstNumber.slice(0, -1);
+
+        if (firstNumber.includes(".") === false) {
+            decimalCount = 0;
+        }
         display.value = firstNumber || "0";  // Afficher "0" si firstNumber est vide
     } 
     else if (secondNumber === "") {
@@ -110,6 +126,10 @@ backspaceButton.addEventListener('click', () => {
     } 
     else {
         secondNumber = secondNumber.slice(0, -1);
+
+        if (secondNumber.includes(".") === false) {
+            secondDecimalCount = 0;
+        }
         display.value = firstNumber + operator + secondNumber;
     }
 });
@@ -118,11 +138,27 @@ clearButton.addEventListener('click', () => {
     firstNumber = "";
     secondNumber = "";
     operator = "";
+    decimalCount = 0;
+    secondDecimalCount = 0;
 
     display.value = "0";
 });
 
 equalButton.addEventListener('click', () => {
+    if (firstNumber === "" || secondNumber === "" || operator === "") {
+        display.value = "Write your calcul entirely!!";
+
+        setTimeout(() => {
+            display.value = "0";
+        }, 2000);
+
+        firstNumber = "";
+        secondNumber = "";
+        operator = "";
+
+        return;
+    }
+
     if (firstNumber.includes(".") === true) {
         firstNumber = parseFloat(firstNumber);
     }
@@ -138,5 +174,22 @@ equalButton.addEventListener('click', () => {
     }
 
     result = operate(firstNumber, operator, secondNumber);
-    console.log(result);
+
+    if (typeof result === "string" && result.startsWith("Error")) {
+        display.value = result;
+
+        setTimeout(() => {
+            display.value = "0";
+        }, 2000);
+
+        firstNumber = "";
+        secondNumber = "";
+        operator = "";
+        return;
+    }
+    
+    display.value = "0";
+    firstNumber = result.toString();
+    operator = "";
+    updateDisplay(firstNumber, operator);
 });
